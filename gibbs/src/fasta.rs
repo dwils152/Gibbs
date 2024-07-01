@@ -1,8 +1,9 @@
 use std::io::{BufReader, BufRead};
 use std::fs::File;
 use std::error::Error;
-use regex::Regex;
+use std::collections::HashSet;
 
+#[derive(Clone)]
 pub struct SequenceRecord {
     pub header: String,
     pub seq: String,
@@ -23,7 +24,7 @@ impl FastaParser {
                 if !current_header.is_empty() {
                     records.push(SequenceRecord {
                         header: current_header.clone(),
-                        seq: Self::hard_mask(current_seq.clone()),
+                        seq: Self::hard_mask(&current_seq),
                     });
                     current_seq.clear();
                 }
@@ -36,16 +37,18 @@ impl FastaParser {
         if !current_header.is_empty() {
             records.push(SequenceRecord {
                 header: current_header,
-                seq: Self::hard_mask(current_seq),
+                seq: Self::hard_mask(&current_seq),
             });
         }
 
         Ok(records)
     }
 
-    pub fn hard_mask(seq: String) -> String {
-        let soft_chars = Regex::new("[a-z]").unwrap();
-        soft_chars.replace(&seq, "N").to_string()
+    pub fn hard_mask(seq: &str) -> String {
+        let valid_nts: HashSet<char> = HashSet::from(['A', 'C', 'G', 'T']);
+        seq.chars()
+            .map(|nt| if valid_nts.contains(&nt) { nt } else { 'N' })
+            .collect()
     }
 
     

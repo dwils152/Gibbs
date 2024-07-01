@@ -13,8 +13,10 @@ fn main() {
         .to_string();
     
     let fasta_records = FastaParser::parse(&fasta_path).unwrap();
-    let markov_chain = MarkovChain::init_kmer_dict(4);
-    let counts = MarkovChain::count_kmers(4, fasta_records);
+    let markov_chain = MarkovChain::new(fasta_records);
+    //println!("{:?}", markov_chain.transition_probabilities);
+    //let markov_chain = MarkovChain::init_kmer_dict(4);
+    //let counts = MarkovChain::count_kmers(4, fasta_records);
 
 
     
