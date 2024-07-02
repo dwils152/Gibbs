@@ -1,7 +1,7 @@
-use std::io::{BufReader, BufRead};
-use std::fs::File;
-use std::error::Error;
 use std::collections::HashSet;
+use std::error::Error;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 
 #[derive(Clone)]
 pub struct SequenceRecord {
@@ -50,6 +50,4 @@ impl FastaParser {
             .map(|nt| if valid_nts.contains(&nt) { nt } else { 'N' })
             .collect()
     }
-
-    
 }
