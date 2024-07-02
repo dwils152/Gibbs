@@ -1,6 +1,7 @@
 use crate::fasta::SequenceRecord;
 use itertools::Itertools;
-use std::collections::{HashMap, HashSet};
+use rand::Rng;
+use std::collections::HashMap;
 
 pub struct MarkovChain {
     pub transition_probabilities: HashMap<String, HashMap<char, f64>>,
@@ -63,9 +64,68 @@ impl MarkovChain {
         }
     }
 
-    pub fn generate_sequence(&self, records: Vec<SequenceRecord>) {
-        for record in records.iter() {
-           todo!(); 
+    pub fn sample_start(&self) -> String {
+        let kmers: Vec<String> = self.starting_states.keys().cloned().collect();
+        let probabilities: Vec<f64> = self.starting_states.values().cloned().collect();
+        let mut cdf = Vec::with_capacity(probabilities.len() + 1);
+        cdf.push(0.0);
+
+        for (idx, prob) in probabilities.iter().enumerate() {
+            cdf.push(cdf[idx] + prob);
         }
+
+        // generate a random number between 0 and 1
+        let mut rng = rand::thread_rng();
+        let mut random_number = rng.gen::<f64>();
+
+        // sample the starting state
+        let mut idx = 0;
+        while random_number > cdf[idx] {
+            idx += 1;
+        }
+
+        let starting_state = kmers[idx].clone();
+        starting_state
+    }
+
+    fn get_next_state(&self, current_state: &str) -> char {
+        let nucleotides = vec!['A', 'C', 'G', 'T'];
+        let probabilities = self.transition_probabilities.get(current_state).unwrap();
+        let mut cdf = Vec::with_capacity(probabilities.len() + 1);
+        cdf.push(0.0);
+
+        for nucleotide in nucleotides.iter() {
+            cdf.push(cdf.last().unwrap() + probabilities.get(nucleotide).unwrap());
+        }
+
+        let mut rng = rand::thread_rng();
+        let mut random_number = rng.gen::<f64>();
+
+        let mut idx = 0;
+        while random_number > cdf[idx] {
+            idx += 1;
+        }
+
+        nucleotides[idx - 1]
+    }
+
+    pub fn get_current_state(&self, sequence: &str, k: usize) -> String {
+        let current_state = &sequence[sequence.len() - k..];
+        current_state.to_string()
+    }
+
+    pub fn generate_bg_seq(&self, starting_state: &str, length: usize) -> String {
+        let current_state = starting_state;
+        let mut bg = String::with_capacity(length);
+        bg.push_str(current_state);
+
+        while bg.len() < length {
+            let nucleotide = self.get_next_state(&current_state);
+            bg.push(nucleotide);
+            //println!("{}", bg);
+            let current_state = self.get_current_state(&bg, 3);
+        }
+
+        bg
     }
 }
